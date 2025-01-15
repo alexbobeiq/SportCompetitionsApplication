@@ -2,7 +2,7 @@
  * @author Bobeica Alexandru
  * @version 20 decembrie 2024
  */
- com.example.SportCompetitionsApplication.models;
+package com.example.SportCompetitionsApplication.models;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.Nationalized;
