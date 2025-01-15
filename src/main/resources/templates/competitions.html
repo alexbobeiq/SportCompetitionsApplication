@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competitions</title>
+
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+            crossorigin="anonymous"
+    >
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="text-center">Competitions</h1>
+
+    <!-- Form for Creating a New Competition -->
+    <form th:action="@{/competitions/create}" method="post" class="mb-5">
+        <h2 class="mb-4">Create a New Competition</h2>
+        <div class="row g-3">
+            <!-- Competition Name -->
+            <div class="col-md-6">
+                <label for="name" class="form-label">Competition Name:</label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="Enter competition name" required />
+            </div>
+
+            <!-- Start Date -->
+            <div class="col-md-3">
+                <label for="startDate" class="form-label">Start Date:</label>
+                <input type="date" id="startDate" name="startDate" class="form-control" required />
+            </div>
+
+            <!-- End Date -->
+            <div class="col-md-3">
+                <label for="endDate" class="form-label">End Date:</label>
+                <input type="date" id="endDate" name="endDate" class="form-control" required />
+            </div>
+
+            <!-- Location -->
+            <div class="col-md-6">
+                <label for="location" class="form-label">Location:</label>
+                <input type="text" id="location" name="location" class="form-control" placeholder="Enter location" required />
+            </div>
+
+            <!-- Prize Pool -->
+            <div class="col-md-6">
+                <label for="prizePool" class="form-label">Prize Pool:</label>
+                <input type="number" id="prizePool" name="prizePool" class="form-control" placeholder="Enter prize pool amount" required />
+            </div>
+
+            <!-- Teams Selection -->
+            <div class="col-md-12">
+                <label for="teams" class="form-label">Select Teams:</label>
+                <select id="teams" name="teamIds" class="form-select" multiple required>
+                    <option th:each="team : ${teams}" th:value="${team.id}" th:text="${team.nume}"></option>
+                </select>
+                <small class="text-muted">Hold Ctrl to select more.</small>
+            </div>
+
+            <!-- Referee Selection -->
+            <div class="col-md-12">
+                <label for="referees" class="form-label">Select Referees:</label>
+                <select id="referees" name="refereeIds" class="form-select" multiple>
+                    <option th:each="referee : ${referees}" th:value="${referee.id}" th:text="${referee.nume + ' ' + referee.prenume}"></option>
+                </select>
+                <small class="text-muted">Hold Ctrl to select more.</small>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Create Competition</button>
+        </div>
+    </form>
+
+    <!-- Success Message -->
+    <div th:if="${success}" class="alert alert-success">
+        <p th:text="${success}"></p>
+    </div>
+
+    <!-- Error Message -->
+    <div th:if="${error}" class="alert alert-danger">
+        <p th:text="${error}"></p>
+    </div>
+
+    <!-- Existing Competitions Accordion -->
+    <h2 class="mb-4">Ongoing Competitions</h2>
+    <div th:if="${!#lists.isEmpty(ongoingCompetitions)}" class="accordion mt-4" id="ongoingCompetitionsAccordion">
+        <div th:each="competition, iterStat : ${ongoingCompetitions}" class="accordion-item">
+            <h2 class="accordion-header" th:id="'heading-' + ${iterStat.index}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        th:data-bs-target="'#collapse-' + ${iterStat.index}"
+                        aria-expanded="false"
+                        th:aria-controls="'collapse-' + ${iterStat.index}">
+                    [[${competition.nume}]] - Winner: [[${competition.castigator ?: 'TBD'}]]
+                </button>
+            </h2>
+            <div th:id="'collapse-' + ${iterStat.index}" class="accordion-collapse collapse"
+                 th:aria-labelledby="'heading-' + ${iterStat.index}" data-bs-parent="#ongoingCompetitionsAccordion">
+                <div class="accordion-body">
+                    <p><strong>Name:</strong> [[${competition.nume}]]</p>
+                    <p><strong>Start Date:</strong> [[${competition.dataIncepere}]]</p>
+                    <p><strong>End Date:</strong> [[${competition.dataSfarsit}]]</p>
+                    <p><strong>Location:</strong> [[${competition.locatie}]]</p>
+                    <p><strong>Prize Pool:</strong> [[${competition.prizePool}]]</p>
+                    <p><strong>Winner:</strong> [[${competition.castigator ?: 'TBD'}]]</p>
+                    <!-- Referee List -->
+                    <h4 class="mt-4">Referees</h4>
+                    <ul>
+                        <div th:if="${refereesMap != null and refereesMap[competition.id] != null and #lists.size(refereesMap) > 0}">
+                            <li th:each="referee : ${refereesMap != null && #lists.size(refereesMap) > 0 ? refereesMap[competition.id] : 'No data'}" th:text="${referee.getNume()} + ' ' + ${referee.getPrenume()}"></li>
+                        </div>
+                    </ul>
+
+                    <!-- Table of Participating Teams -->
+                    <h4 class="mt-4">Participating Teams</h4>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Team Name</th>
+                            <th>Wins</th>
+                            <th>Draws</th>
+                            <th>Losses</th>
+                            <th>Points</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="participation : ${participationsMap[competition.id]}">
+                            <td th:text="${participation.echipaID.nume}"></td>
+                            <td th:text="${participation.nrVictorii ?: 0}"></td>
+                            <td th:text="${participation.nrEgaluri ?: 0}"></td>
+                            <td th:text="${participation.nrInfrangeri ?: 0}"></td>
+                            <td th:text="${(participation.nrVictorii ?: 0) * 3 + (participation.nrEgaluri ?: 0)}"></td>
+
+                            <td>
+                                <!-- Edit Button -->
+                                <form th:action="@{/competitions/{competitionId}/updateTeamStats(competitionId=${competition.id})}" method="post">
+                                    <input type="hidden" name="teamId" th:value="${participation.echipaID.id}" />
+                                    <input type="number" name="nrVictorii" min="0" placeholder="Wins"
+                                           th:value="${participation.nrVictorii ?: 0}" required />
+                                    <input type="number" name="nrEgaluri" min="0" placeholder="Draws"
+                                           th:value="${participation.nrEgaluri ?: 0}" required />
+                                    <input type="number" name="nrInfrangeri" min="0" placeholder="Losses"
+                                           th:value="${participation.nrInfrangeri ?: 0}" required />
+                                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex mt-3">
+                        <!-- Delete Competition Button -->
+                        <form th:action="@{/competitions/delete}" method="post" class="me-2">
+                            <input type="hidden" name="competitionId" th:value="${competition.id}" />
+                            <input type="hidden" name="createdBy" th:value="${loggedInUser}" />
+                            <button type="submit" class="btn btn-danger"
+                                    onclick="return confirm('Are you sure you want to delete this competition?');">
+                                Delete Competition
+                            </button>
+                        </form>
+
+                        <!-- End Competition Button -->
+                        <form th:action="@{/competitions/{competitionId}/end(competitionId=${competition.id})}" method="post">
+                            <button type="submit" class="btn btn-warning"
+                                    onclick="return confirm('Are you sure you want to end this competition?');">
+                                End Competition
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History drop down list -->
+    <h2 class="mt-5">History</h2>
+    <div th:if="${!#lists.isEmpty(endedCompetitions)}" class="accordion mt-4" id="endedCompetitionsAccordion">
+        <div th:each="competition, iterStat : ${endedCompetitions}" class="accordion-item">
+            <h2 class="accordion-header" th:id="'history-heading-' + ${iterStat.index}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        th:data-bs-target="'#history-collapse-' + ${iterStat.index}"
+                        aria-expanded="false"
+                        th:aria-controls="'history-collapse-' + ${iterStat.index}">
+                    [[${competition.nume}]] - Winner: [[${competition.castigator ?: 'TBD'}]]
+                </button>
+            </h2>
+            <div th:id="'history-collapse-' + ${iterStat.index}" class="accordion-collapse collapse"
+                 th:aria-labelledby="'history-heading-' + ${iterStat.index}" data-bs-parent="#endedCompetitionsAccordion">
+                <div class="accordion-body">
+                    <p><strong>Name:</strong> [[${competition.nume}]]</p>
+                    <p><strong>Start Date:</strong> [[${competition.dataIncepere}]]</p>
+                    <p><strong>End Date:</strong> [[${competition.dataSfarsit}]]</p>
+                    <p><strong>Location:</strong> [[${competition.locatie}]]</p>
+                    <p><strong>Prize Pool:</strong> [[${competition.prizePool}]]</p>
+                    <p><strong>Winner:</strong> [[${competition.castigator ?: 'TBD'}]]</p>
+                </div>
+
+                <!-- Delete Competition Button -->
+                <form th:action="@{/competitions/delete}" method="post" class="me-2">
+                    <input type="hidden" name="competitionId" th:value="${competition.id}" />
+                    <input type="hidden" name="createdBy" th:value="${loggedInUser}" />
+                    <button type="submit" class="btn btn-danger"
+                            onclick="return confirm('Are you sure you want to delete this competition?');">
+                        Delete Competition
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Bootstrap JS -->
+<script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous">
+</script>
+</body>
+</html>
