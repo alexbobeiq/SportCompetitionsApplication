@@ -95,6 +95,7 @@
                         aria-expanded="false"
                         th:aria-controls="'collapse-' + ${iterStat.index}">
                     [[${competition.nume}]] - Winner: [[${competition.castigator ?: 'TBD'}]]
+                    <span th:text="${sponsoredStatus[competition.id]}" class="badge bg-success ms-2"></span>
                 </button>
             </h2>
             <div th:id="'collapse-' + ${iterStat.index}" class="accordion-collapse collapse"
@@ -107,6 +108,9 @@
                     <p><strong>Prize Pool:</strong> [[${competition.prizePool}]]</p>
                     <p><strong>Winner:</strong> [[${competition.castigator ?: 'TBD'}]]</p>
                     <p><strong>Total Players:</strong> [[${competitionPlayerCounts[competition.id] ?: 0}]]</p>
+
+                    <h4 class="mt-4">Top Salary</h4>
+                    <p><strong>Salary:</strong> $<span th:text="${topSalaries[competition.id]}"></span></p>
                     <!-- Referee List -->
                     <h4 class="mt-4">Referees</h4>
                     <ul>
@@ -187,6 +191,9 @@
                         aria-expanded="false"
                         th:aria-controls="'history-collapse-' + ${iterStat.index}">
                     [[${competition.nume}]] - Winner: [[${competition.castigator ?: 'TBD'}]]
+                    <span th:if="${fullySponsoredCompetitions.contains(competition.nume)}" class="badge bg-success ms-2">
+                        Fully Sponsored
+                    </span>
                 </button>
             </h2>
             <div th:id="'history-collapse-' + ${iterStat.index}" class="accordion-collapse collapse"

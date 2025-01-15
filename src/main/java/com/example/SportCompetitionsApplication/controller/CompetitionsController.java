@@ -5,24 +5,20 @@
 
 package com.example.SportCompetitionsApplication.controller;
 
+import com.example.SportCompetitionsApplication.repository.*;
 import com.example.SportCompetitionsApplication.services.LoggedInUser;
 import com.example.SportCompetitionsApplication.models.Arbitrii;
 import com.example.SportCompetitionsApplication.models.Competitii;
 import com.example.SportCompetitionsApplication.models.Participare;
-import com.example.SportCompetitionsApplication.repository.ArbitriiCompetitiiRepository;
-import com.example.SportCompetitionsApplication.repository.CompetitiiRepository;
 import com.example.SportCompetitionsApplication.services.ParticipareService;
-import com.example.SportCompetitionsApplication.repository.EchipeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/competitions")
@@ -30,17 +26,16 @@ public class CompetitionsController {
 
     @Autowired
     private ParticipareService participareService;
-
     @Autowired
     private EchipeRepository echipeRepository;
-
-
     @Autowired
     private LoggedInUser loggedInUser;
     @Autowired
     private CompetitiiRepository competitiiRepository;
     @Autowired
     private ArbitriiCompetitiiRepository arbitriiCompetitiiRepository;
+    @Autowired
+    private JucatoriRepository jucatoriRepository;
 
     @GetMapping
     public String showCompetitions(Model model) {
@@ -80,7 +75,6 @@ public class CompetitionsController {
         for (Competitii competition : ongoingCompetitions) {
             refereesMap.put(competition.getId(), participareService.getRefereesForCompetition(competition.getId()));
         }
-        System.out.println(refereesMap);
 
         // Fetch competitions with total players
         List<Object[]> competitionsWithPlayers = competitiiRepository.findCompetitionsWithTotalPlayers();
@@ -93,7 +87,25 @@ public class CompetitionsController {
             competitionPlayerCounts.put(competitionId, totalPlayers);
         }
 
+        Map<Integer, Integer> topSalaries = new HashMap<>();
+        for(Competitii competition : ongoingCompetitions) {
+            Integer competitionId = competition.getId();
+            Integer topSalary = jucatoriRepository.findTopSalaryByCompetitionId(competitionId);
+            topSalaries.put(competitionId, (topSalary != null ? topSalary : 0));
+        }
 
+        // Fetch fully sponsored competitions
+        List<String> fullySponsoredCompetitions = competitiiRepository.findFullySponsoredCompetitions();
+        Map<Integer, String> sponsoredStatus = new HashMap<>();
+        for(Competitii competition : ongoingCompetitions) {
+            Integer competitionId = competition.getId();
+            String sponsoredStatusString = fullySponsoredCompetitions.contains(competition.getNume()) ? "  Fully Sponsored" : "  Not Sponsored";
+            sponsoredStatus.put(competitionId, sponsoredStatusString);
+        }
+
+        model.addAttribute("sponsoredStatus", sponsoredStatus);
+        model.addAttribute("fullySponsoredCompetitions", fullySponsoredCompetitions);
+        model.addAttribute("topSalaries", topSalaries);
         model.addAttribute("competitionPlayerCounts", competitionPlayerCounts);
         model.addAttribute("participationsMap", participationsMap);
         model.addAttribute("participationsMapEnded", participationsMapEnded);
@@ -164,6 +176,9 @@ public class CompetitionsController {
 
     @GetMapping("/{competitionId}/participations")
     public String getParticipations(@PathVariable Integer competitionId, Model model) {
+
+        Integer topSalary = jucatoriRepository.findTopSalaryByCompetitionId(competitionId);
+        System.out.println(topSalary);
         List<Participare> participations = participareService.getParticipationsByCompetitionId(competitionId);
 
         // Sortarea echipelor in functie de puncte. Daca punctajul este egal, se sorteaza dupa nr de victorii
@@ -174,8 +189,9 @@ public class CompetitionsController {
                 .reversed()
         );
 
+        model.addAttribute("topSalary", topSalary != null ? topSalary : 0);
         model.addAttribute("participations", participations);
-        return "participations";
+        return showCompetitions(model);
     }
 
     @PostMapping("/{competitionId}/updateTeamStats")

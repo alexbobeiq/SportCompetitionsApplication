@@ -80,6 +80,19 @@ public interface CompetitiiRepository extends CrudRepository<Competitii, Integer
             WHERE p.echipaID.id = :teamId
 """)
         List<Object[]> getMatchStatsByTeam(@Param("teamId") Integer teamId);
+        ///!!!!!!!!!!!1
+        @Query(value = """
+            SELECT c.Nume AS competition_name
+            FROM Competitii c
+            JOIN Participare p ON c.CompetitieID = p.CompetitieID
+            JOIN Echipe e ON p.EchipaID = e.EchipaID
+            LEFT JOIN Sponsori s ON e.EchipaID = s.EchipaID
+            WHERE s.SponsorID IS NOT NULL
+            GROUP BY c.Nume
+            HAVING COUNT(DISTINCT p.EchipaID) = COUNT(DISTINCT s.EchipaID);
+        """, nativeQuery = true)
+        List<String> findFullySponsoredCompetitions();
+
 
 
 

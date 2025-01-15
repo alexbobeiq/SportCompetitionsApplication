@@ -32,4 +32,15 @@ public interface JucatoriRepository extends JpaRepository<Jucatori, Integer> {
     @Transactional
     @Query("DELETE FROM Jucatori j WHERE j.id = :playerId")
     void deleteById(@Param("playerId") Integer playerId);
+    //!!!!!!!!!!!!!!!
+    @Query(value = """
+    SELECT MAX(j.Salariu) AS top_salary
+    FROM Jucatori j
+    JOIN Echipe e ON j.EchipaID = e.EchipaID
+    JOIN Participare p ON e.EchipaID = p.EchipaID
+    JOIN Competitii c ON p.CompetitieID = c.CompetitieID
+    WHERE c.CompetitieID = :competitionId
+""", nativeQuery = true)
+    Integer findTopSalaryByCompetitionId(@Param("competitionId") Integer competitionId);
+
 }
