@@ -82,7 +82,19 @@ public class CompetitionsController {
         }
         System.out.println(refereesMap);
 
+        // Fetch competitions with total players
+        List<Object[]> competitionsWithPlayers = competitiiRepository.findCompetitionsWithTotalPlayers();
 
+        // Create a map to associate competition IDs with the total number of players
+        Map<Integer, Long> competitionPlayerCounts = new HashMap<>();
+        for (Object[] row : competitionsWithPlayers) {
+            Integer competitionId = (Integer) row[0];
+            Long totalPlayers = ((Number) row[2]).longValue();
+            competitionPlayerCounts.put(competitionId, totalPlayers);
+        }
+
+
+        model.addAttribute("competitionPlayerCounts", competitionPlayerCounts);
         model.addAttribute("participationsMap", participationsMap);
         model.addAttribute("participationsMapEnded", participationsMapEnded);
         model.addAttribute("ongoingCompetitions", ongoingCompetitions);

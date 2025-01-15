@@ -202,6 +202,27 @@
     </table>
 </div>
 <div class="container mt-5">
+
+    <h3 class="mt-4">Sponsor and Competition Statistics</h3>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Sponsor Name</th>
+            <th>Competitions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="entry : ${sponsorCompetitionsMap}">
+            <td th:text="${entry.key}"></td>
+            <td>
+                <ul>
+                    <li th:each="competition : ${entry.value}" th:text="${competition}"></li>
+                </ul>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
     <h1 class="text-center">Team Statistics</h1>
     <div class="row mt-4">
         <div class="col-md-6">

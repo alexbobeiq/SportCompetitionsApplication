@@ -49,12 +49,12 @@ public interface ParticipareRepository extends JpaRepository<Participare, Intege
     @Query("DELETE FROM Participare p WHERE p.competitieID.id = :competitionId")
     void deleteByCompetitieID(@Param("competitionId") Integer competitionId);
 
-    @Query("""
-        SELECT p
-        FROM Participare p
-        JOIN FETCH p.echipaID e
-        WHERE p.competitieID.id = :competitionId
-    """)
+    @Query(value = """
+    SELECT p.*
+    FROM Participare p
+    JOIN Echipe e ON p.EchipaID = e.EchipaID
+    WHERE p.CompetitieID = :competitionId
+""", nativeQuery = true)
     List<Participare> findParticipationsByCompetitionId(@Param("competitionId") Integer competitionId);
 
     @Modifying
@@ -72,12 +72,14 @@ public interface ParticipareRepository extends JpaRepository<Participare, Intege
                      @Param("nrEgaluri") Integer nrEgaluri,
                      @Param("nrInfrangeri") Integer nrInfrangeri);
 
-    // Fetch all unique competition IDs where the team has participated
-    @Query("SELECT DISTINCT p.competitieID.id FROM Participare p WHERE p.echipaID.id = :teamId")
+    ///!!!!!!11
+    @Query(value = """
+        SELECT DISTINCT c.CompetitieID
+        FROM Competitii c
+        JOIN Participare p ON c.CompetitieID = p.CompetitieID
+        JOIN Echipe e ON p.EchipaID = e.EchipaID
+        WHERE e.EchipaID = :teamId
+        """, nativeQuery = true)
     List<Integer> findCompetitionsByTeamId(@Param("teamId") Integer teamId);
-
-    // Fetch all participations for a specific competition
-    @Query("SELECT p FROM Participare p WHERE p.competitieID.id = :competitionId")
-    List<Participare> findByCompetitieID(@Param("competitionId") Integer competitionId);
 
 }

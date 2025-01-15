@@ -51,15 +51,25 @@ public interface CompetitiiRepository extends CrudRepository<Competitii, Integer
         @Query("SELECT c FROM Competitii c WHERE COALESCE(c.incheiat, 0) = 1")
         List<Competitii> findEndedCompetitions(); // Ended (Incheiat = 1)
 
-        @Query("""
-            SELECT COUNT(DISTINCT c.id)
+        ///!!!!!!
+        @Query(value = """
+            SELECT COUNT(DISTINCT c.CompetitieID)
             FROM Competitii c
-            JOIN Participare p ON p.competitieID.id = c.id
-            JOIN Echipe e ON e.id = p.echipaID.id
-            WHERE e.managerID.id = :managerId AND COALESCE(c.incheiat, 0) = 0
-""")
+            JOIN Participare p ON p.CompetitieID = c.CompetitieID
+            JOIN Echipe e ON e.EchipaID = p.EchipaID
+            WHERE e.ManagerID = :managerId AND (c.Incheiat = 0 OR c.Incheiat IS NULL)
+        """, nativeQuery = true)
         long countOngoingCompetitionsByManager(@Param("managerId") Integer managerId);
 
+        //!!!!!
+        @Query(value = """
+            SELECT c.CompetitieID, c.nume AS competition_name, COUNT(j.JucatorID) AS total_players
+            FROM Competitii c
+            JOIN Participare p ON c.CompetitieID = p.CompetitieID
+            JOIN Jucatori j ON p.EchipaID = j.EchipaID
+            GROUP BY c.CompetitieID, c.nume
+""", nativeQuery = true)
+        List<Object[]> findCompetitionsWithTotalPlayers();
 
         @Query("""
             SELECT COUNT(p) AS totalMatches,

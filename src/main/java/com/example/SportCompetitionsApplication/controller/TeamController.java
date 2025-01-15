@@ -4,15 +4,12 @@
  */
 package com.example.SportCompetitionsApplication.controller;
 
+import com.example.SportCompetitionsApplication.repository.*;
 import com.example.SportCompetitionsApplication.services.LoggedInUser;
 import com.example.SportCompetitionsApplication.models.Echipe;
 import com.example.SportCompetitionsApplication.models.Jucatori;
 import com.example.SportCompetitionsApplication.models.Sponsori;
 import com.example.SportCompetitionsApplication.models.Staff;
-import com.example.SportCompetitionsApplication.repository.EchipeRepository;
-import com.example.SportCompetitionsApplication.repository.JucatoriRepository;
-import com.example.SportCompetitionsApplication.repository.SponsoriRepository;
-import com.example.SportCompetitionsApplication.repository.StaffRepository;
 import com.example.SportCompetitionsApplication.services.StatisticsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,15 +21,16 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Controller
 @RequiredArgsConstructor
 @CrossOrigin
 @Slf4j
 public class TeamController {
+
+    @Autowired
+    private CompetitiiRepository competitiiRepository;
 
     @Autowired
     private JucatoriRepository jucatoriRepository;
@@ -65,12 +63,27 @@ public class TeamController {
             return "teamPlayers"; // Show empty page with error
         }
 
+        // Fetch sponsor and competition information
+        List<Object[]> sponsorCompetitionList = echipeRepository.findSponsorCompetitionByUserId(managerId);
+
+        // Group competitions by sponsor
+        Map<String, List<String>> sponsorCompetitionsMap = new LinkedHashMap<>();
+        for (Object[] row : sponsorCompetitionList) {
+            String sponsorName = (String) row[0];
+            String competitionName = (String) row[1];
+
+            sponsorCompetitionsMap
+                    .computeIfAbsent(sponsorName, k -> new ArrayList<>())
+                    .add(competitionName);
+        }
+
         // Se salveaza jucatorii
         List<Jucatori> players = jucatoriRepository.findByEchipaId(team.getId());
 
         model.addAttribute("teamName", team.getNume());
         model.addAttribute("players", players);
         model.addAttribute("teamId", team.getId());
+        model.addAttribute("sponsorCompetitionsMap", sponsorCompetitionsMap);
 
         // Statistici
         Integer teamId = team.getId();
